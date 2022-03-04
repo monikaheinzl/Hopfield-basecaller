@@ -41,8 +41,8 @@ $ sh train_Hopfield_CTC.sh
 ```
 
 For all architectures the following parameters should be modified during training:
-`infile`: pickle file that is created in the preprocessing step with the training, validation (and testing) set.
-`outfolder`: appendix of the folder name that is created after training (training_result_ + outfolder name).
+* `infile`: pickle file that is created in the preprocessing step with the training, validation (and testing) set.
+* `outfolder`: appendix of the folder name that is created after training (training_result_ + outfolder name).
 
 The ouput are the following files: 
 txt file with the model's summary (outfolder name.txt), event file of TensorBoard to track the loss, edit distance (and accuracy), PDF file with loss, edit distance (and accuracy) of both training and validation set, json file with the hyperparameters of the model (model.json) and a pickle file with the learned model (outfolder name.pt). The latter two files are required for inference. 
@@ -58,10 +58,10 @@ $ sh inference_Hopfield.sh
 ```
 
 The following parameters should be modified during inference:
-`infile`: directory containing FAST5 files.
-`modelfolder`: file of the trained model (e.g. `training_result_final_model/final_model.pt`).
-`configfile` (optional): file with hyperparameters of the trained model (e.g. `training_result_final_model/model.json`). If parameter is `None`, the hyperparameters can be defined in the script `inference_Hopfield.sh`.
-`outfolder`: name of the output directory. 
+* `infile`: directory containing FAST5 files.
+* `modelfolder`: file of the trained model (e.g. `training_result_final_model/final_model.pt`).
+* `configfile` (optional): file with hyperparameters of the trained model (e.g. `training_result_final_model/model.json`). If parameter is `None`, the hyperparameters can be defined in the script `inference_Hopfield.sh`.
+* `outfolder`: name of the output directory. 
 
 The output are the following files: 
 A directory containing the FASTA files with the prediction for each window of a read and a FASTA file with the completely predicted read sequence (concatenation of the predicted windows). 
