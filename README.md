@@ -1,1 +1,1 @@
-# basecalling-Hopfield
+# Basecalling of Nanopore sequencing data using modern Hopfield networks
