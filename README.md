@@ -32,7 +32,6 @@ It consists of an encoder-decoder architecture using CNN and modern Hopfield lay
 ```angular2
 $ sh train_Hopfield.sh
 ```
-
 ##### Architecture C:
 It differs from Architecture by not using the modern Hopfield networks as a decoder but the CTC algorithm and can be run by
 
@@ -45,7 +44,11 @@ For all architectures the following parameters should be modified during trainin
 * `outfolder`: appendix of the folder name that is created after training (training_result_ + outfolder name).
 
 The ouput are the following files: 
-txt file with the model's summary (outfolder name.txt), event file of TensorBoard to track the loss, edit distance (and accuracy), PDF file with loss, edit distance (and accuracy) of both training and validation set, json file with the hyperparameters of the model (model.json) and a pickle file with the learned model (outfolder name.pt). The latter two files are required for inference. 
+* txt file with the model's summary (outfolder name.txt)
+* event file of TensorBoard to track the loss, edit distance (and accuracy)
+* PDF file with loss, edit distance (and accuracy) of both training and validation set
+* json file with the hyperparameters of the model (model.json) and a pickle file with the learned model (outfolder name.pt). 
+The latter two files are required for the basecalling. 
 
 ### Basecalling
 Architecture B shows the best results on our validation set and therefore, the basecalling is 
@@ -64,4 +67,5 @@ The following parameters should be modified during inference:
 * `outfolder`: name of the output directory. 
 
 The output are the following files: 
-A directory containing the FASTA files with the prediction for each window of a read and a FASTA file with the completely predicted read sequence (concatenation of the predicted windows). 
+* A directory containing the FASTA files with the prediction for each window of a read and 
+* a FASTA file with the completely predicted read sequence (concatenation of the predicted windows). 
