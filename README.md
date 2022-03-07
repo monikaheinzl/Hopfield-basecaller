@@ -31,7 +31,7 @@ It consists of an encoder-decoder architecture using CNN and modern Hopfield lay
 $ sh train_Hopfield.sh
 ```
 ##### Architecture C:
-It differs from Architecture by not using the modern Hopfield networks as a decoder but the CTC algorithm and can be run by
+It differs from architecture B by not using the modern Hopfield networks as a decoder but the CTC algorithm and can be run by
 
 ```angular2
 $ sh train_Hopfield_CTC.sh
@@ -41,12 +41,12 @@ For all architectures the following parameters should be modified during trainin
 * `infile`: pickle file that is created in the preprocessing step
 * `outfolder`: appendix of the folder name that is created after training (training_result_ + `outfolder` name)
 
-The ouput are the following files: 
-* txt file with the model's summary (outfolder name.txt)
+The directory `outfolder` will then contain the following files after training: 
+* txt file with the model's summary (`outfolder` name.txt)
 * event file of TensorBoard to track the loss, edit distance (and accuracy) during training
 * PDF file with loss, edit distance (and accuracy) after training finishes 
 * json file with the hyperparameters of the model (model.json) 
-* pickle file with the learned model (outfolder name.pt)
+* pickle file with the learned model (`outfolder` name.pt)
 The latter two files are required for the basecalling. 
 
 ### Basecalling
