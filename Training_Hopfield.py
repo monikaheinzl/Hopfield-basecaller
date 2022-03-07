@@ -133,9 +133,8 @@ def make_argparser():
                         help="Embedding type of input. Options: 'cnn', 'residual_blocks', 'hopfield_pooling'")
     parser.add_argument('--nhead_embedding', type=int, default=6,
                         help="number of heads in the multiheadattention models")
-    #parser.add_argument("--res_layer", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=False)
 
-    # LSTM arguments
+    # Hopfield arguments
     parser.add_argument("--input_bias_hopfield", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=True)
     parser.add_argument('-u', '--hidden_units', type=int, default=256,
                         help="Number of hidden units in the Transformer")
@@ -248,17 +247,6 @@ class Transformer(nn.Module):
 
         src, seq_len_cnn = self.cnn_encoder(src, seq_len)
         src = src.transpose(1, 2).transpose(0, 1)
-        #elif src_emb == "hopfield_pooling":
-        #    seq_len_cnn = seq_len
-        #    src = src.transpose(1, 2).transpose(0, 1)
-        #    src_mask_padding = torch.zeros((src.size(1), src.size(0)), dtype=torch.bool).to(self.port) #(src == 0.).squeeze(2)
-        #    for idx, length_cnn in enumerate(seq_len):
-        #        src_mask_padding[idx, int(length_cnn.item()):] = torch.ones(int(abs(src.size(0) - length_cnn.item())), dtype=torch.bool)
-        #    src_mask_padding = Variable(src_mask_padding)
-        #    #print("src_mask_padding", src_mask_padding.size())
-        #    src = self.cnn_encoder(src, stored_pattern_padding_mask=src_mask_padding)
-        #    src = src.unsqueeze(0).transpose(1, 2)
-
         trg_mask = ((trg == 5) | (trg == 4))
         trg_mask = Variable(trg_mask)
 
@@ -275,8 +263,7 @@ class Transformer(nn.Module):
         output = F.log_softmax(output, dim=2)
 
         if update == 0 or update == 55000 or update == 150000 or update == 250000:
-            fig = None #self.encoder.tf_enc.softmax_heads
-            #fig2 = self.decoder.tf_dec.softmax_heads_dec #.cpu() #calculate_k_patterns(self.encoder.tf_enc.softmax_heads)
+            fig = None 
             fig2 = None
         else:
             fig = None
@@ -312,8 +299,6 @@ def convert_to_string(pred, target, target_lengths):
             encoded_pred.append(vocab[int(p.item())])
         encoded_pred = ''.join(encoded_pred)
         encoded_target = ''.join([vocab[int(x.item())] for x in seq_target[0:length]])
-        #max_len = float(max([len(encoded_pred), len(encoded_target)]))
-        #editd.append(editdistance.eval(encoded_pred, encoded_target)/max_len)
         result = editdistance.eval(encoded_pred, encoded_target)
         editd += result
         num_chars += len(encoded_target)
@@ -332,8 +317,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
     print("shuffle=", shuffle)
     print("device=", device)
 
-    
-    #print("training data set=", train_ds[0].size(), train_ds[1].size())
     if val_ds is not None:
         input_x_val = val_ds[0]
         input_y_val = val_ds[1]
@@ -413,7 +396,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
             seq_len = data[2]
             lab_len = data[3]
             batch_y10 = data[4]
-            #batch_read = data[5]
                 
             #Wrap them in a Variable object
             inputs, labels, labels10 = Variable(batch_x, requires_grad=False), Variable(batch_y, requires_grad=False), Variable(batch_y10, requires_grad=False) # batch_size x out_size x seq_length 
@@ -510,8 +492,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                 #    #plot_dec.savefig(file_path + "softmax_training_decoder_update{}.pdf".format(str(updates)))
                 #    #del data_heads_dec[:]
                 #    #del data_heads_dec
-            
-
 
             if (val_ds != None) and (updates % make_validation == 0): # or updates == int((len(train_loader) * n_epochs))-1:  # or (updates == n_epochs-1)):
                 val_losses = []
@@ -534,8 +514,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         seq_len_val = data_val[2]
                         lab_len_val = data_val[3]
                         batch_y10_val = data_val[4]
-                        #batch_read_val = data_val[5]
-                        #optimizer.zero_grad()
                         inputs_val, labels_val, labels10_val = Variable(batch_x_val, requires_grad=False), Variable(batch_y_val, requires_grad=False), Variable(batch_y10_val, requires_grad=False) 
                         # batch_size x out_size x seq_length                     
 
@@ -582,7 +560,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         epoch_acc_val += acc_val
                         running_acc_val += acc_val
                         val_acc.append(acc_val) # acc_val
-
 
                         #if figure_softmax_enc is not None:
                         #    data_heads_val_enc.append(figure_softmax_enc)
@@ -833,7 +810,6 @@ def basecalling(argv):
         kernel_branch1 = 1
         kernel_branch2 = kernel[0]
         cnn_out = cnn_out[0]
-        print(kernel_branch1, kernel_branch2)
         CNN_layers = []
         for l in range(n_layers_cnn):
             if l == 0: # first layer: channel_in = 1
@@ -868,10 +844,6 @@ def basecalling(argv):
 
     print(model12, next(model12.parameters()).is_cuda)
 
-    #if sgd:
-    #    optimizer = optim.SGD(model12.parameters(), lr=lr, momentum=0)
-    #else:
-    #    optimizer = optim.Adam(model12.parameters(), lr=lr, weight_decay=weight_decay, amsgrad=False)
     criterion = torch.nn.NLLLoss(ignore_index=5)#.to(device)
 
     if decrease_lr:

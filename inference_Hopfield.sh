@@ -77,7 +77,6 @@ hidden_units=64
 lstm_layers=5
 nhead=8
 
-# Param Hopfield
 scaling="None"
 pattern_projection_as_connected=False
 normalize_stored_pattern=True

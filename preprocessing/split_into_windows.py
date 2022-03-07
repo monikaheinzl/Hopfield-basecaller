@@ -255,10 +255,6 @@ subdict_test = {x: read_data[x] for x in test_set_names}
 
 print(len(subdict_train.keys()), len(subdict_val.keys()), len(subdict_test.keys()))
 
-# A=0, C=1, G=2, T=3, EOF=4
-dict_classes = {0: "A", 1: "C", 2: "G", 3: "T", 4: "<EOF>"} # A=0, C=1, G=2, T=3, EOF=4
-print(dict_classes)
-
 signals_len = [len(subdict_train[k][1]) for k in list(subdict_train.keys())]
 labels_len = [len(subdict_train[k][2][:, 2]) for k in list(subdict_train.keys())]
 

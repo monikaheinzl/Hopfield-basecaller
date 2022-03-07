@@ -130,9 +130,8 @@ def make_argparser():
                         help="Embedding type of input. Options: 'cnn', 'residual_blocks', 'hopfield_pooling'")
     parser.add_argument('--nhead_embedding', type=int, default=6,
                         help="number of heads in the multiheadattention models")
-    #parser.add_argument("--res_layer", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=False)
 
-    # LSTM arguments
+    # Hopfield arguments
     parser.add_argument("--input_bias_hopfield", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=True)
     parser.add_argument('-u', '--hidden_units', type=int, default=256,
                         help="Number of hidden units in the Transformer")
@@ -378,9 +377,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
             seq_len = data[2]
             lab_len = data[3]
             batch_y10 = data[4]
-            #batch_read = data[5]
-            #batch_y[batch_y == 4.] = 5
-            #lab_len = lab_len - 1
                 
             #Wrap them in a Variable object
             inputs, labels, labels10 = Variable(batch_x, requires_grad=False), Variable(batch_y, requires_grad=False), Variable(batch_y10, requires_grad=False) # batch_size x out_size x seq_length 
@@ -400,13 +396,10 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
 
 
             output, output_len, figure_softmax = model(src=inputs, seq_len=seq_len, update=updates) #, src_mask=None, trg_mask=None)
-            #output = output.contiguous()
 
             concat_label = torch.flatten(labels)
             concat_label = concat_label[concat_label.lt(5)]
 
-            #loss = criterion(output, labels.long(), output_len.long(), lab_len.long()) #reshaped_output, reshaped_sorted_labels.long())    
-            #loss = F.ctc_loss(output, labels.long(), output_len.long(), lab_len.long(), blank=4, reduction='sum')
             loss = F.ctc_loss(output, concat_label, output_len.long(), lab_len.long(), blank=0, reduction='sum', zero_infinity=True)
 
             # Backward pass
@@ -423,47 +416,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
             loss_iteration.append(loss.item() / inputs.size(0)) #.detach().cpu().item()) # detach.item
             epoch_loss += (loss.item() / inputs.size(0)) #.item()
             running_loss_train += (loss.item() / inputs.size(0)) #.item()
-
-            #output = output.transpose(0, 1).cpu()#.contiguous()
-            ## b x t x classess
-            #ctc_decoder = CTCBeamDecoder("ACGT- ", model_path=None,
-            #    alpha=0,
-            #    beta=0,
-            #    cutoff_top_n=6, #0
-            #    cutoff_prob=1.0,
-            #    beam_width=3,
-            #    num_processes=1,
-            #    blank_id=4,
-            #    log_probs_input=True)
-            #beam_results, beam_scores, timesteps, out_lens = ctc_decoder.decode(output, output_len)
-            #best_beam = beam_results[:, 0]
-            #if best_beam.size(1) < labels.size(1):
-            #    pad = torch.ones(best_beam.size(0), abs(best_beam.size(1) - labels.size(1)))
-            #    pad[:, :] = 5
-            #    best_beam = torch.cat((best_beam, pad), 1)
-#
-            #reshaped_output = best_beam[:, :labels.size(1)].reshape(-1)
-            #reshaped_sorted_labels = labels.view(-1).cpu()
-            #notpadded_index = reshaped_sorted_labels != 5
-            #acc = (reshaped_output[notpadded_index] == reshaped_sorted_labels[notpadded_index]).sum().item() / reshaped_sorted_labels[notpadded_index].size(0)
-#
-            #epoch_acc += acc
-            #running_acc_train += acc
-            #acc_iteration.append(acc) # acc
-#
-            #if editD:
-            #    dict_classes = {0: "A", 1: "C", 2: "G", 3: "T", 4: "-", 5: " "}
-            #    if updates % make_validation == 0:
-            #        ed = np.mean(np.array(convert_to_string(beam_results, out_lens, labels, lab_len, dict_classes)))
-            #        ed2 = ed
-            #    else:
-            #        ed = 0
-            #        ed2 = old_ed
-            #
-            #    old_ed = ed2
-            #    epoch_editd += ed
-            #    running_editd_train += ed
-            #    editd_iteration.append(ed2) #ed2
                 
             if updates % make_validation == 0:
                 print("=" * 30)
@@ -516,10 +468,7 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         seq_len_val = data_val[2]
                         lab_len_val = data_val[3]
                         batch_y10_val = data_val[4]
-                        #batch_read_val = data_val[5]
-                        #batch_y_val[batch_y_val == 4.] = 5
-                        #lab_len_val = lab_len_val - 1
-                        #optimizer.zero_grad()
+
                         inputs_val, labels_val, labels10_val = Variable(batch_x_val, requires_grad=False), Variable(batch_y_val, requires_grad=False), Variable(batch_y10_val, requires_grad=False) 
                         # batch_size x out_size x seq_length                     
 
@@ -531,9 +480,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                             labels_val = labels_val.type(torch.LongTensor)
                         else:
                             labels_val = labels_val.type(torch.cuda.LongTensor)
-                        #trg_val = torch.cat((torch.Tensor([6]).to(device).repeat(labels_val.size(0), 1), labels_val.float()), 1).type(torch.cuda.LongTensor)
-                        #labels_val = labels_val.type(torch.cuda.LongTensor)
-                        
 
                         if iteration_val == 0 or iteration_val % 10 == 0: # get softmax of heads only for every second sample, otherwise too memory intesive
                             updates_val = updates - 1
@@ -544,15 +490,10 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         else: 
                             updates_val = updates - 1
 
-                        output_val, output_val_len, figure_softmax = model(src=inputs_val, seq_len=seq_len_val, update=updates_val)
-                        #output_val = output_val.contiguous()
-                        
+                        output_val, output_val_len, figure_softmax = model(src=inputs_val, seq_len=seq_len_val, update=updates_val)                        
                         concat_label = torch.flatten(labels_val)
                         concat_label = concat_label[concat_label.lt(5)]
 
-
-                        #loss_val = criterion(output_val, labels_val.long(), output_val_len.long(), lab_len_val.long()) #reshaped_output, reshaped_sorted_labels.long())    
-                        #loss_val = F.ctc_loss(output_val, labels_val.long(), output_val_len.long(), lab_len_val.long(), blank=4, reduction='sum')
                         loss_val = F.ctc_loss(output_val, concat_label, output_val_len.long(), lab_len_val, blank=0, reduction='sum', zero_infinity=True)
 
                         if loss_val.isinf():
@@ -594,12 +535,9 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         epoch_acc_val += acc_val
                         running_acc_val += acc_val
                         val_acc.append(acc_val) # acc_val
-                        #print("=" * 30)
-                        #print("Validation: Loss = {0:.4f}, Accuracy = ".format(loss_val.item()) + str(acc_val*100) + " %")
-                        #print("=" * 30)
+
                        	if editD:
                        	    dict_classes = {0: "-", 1: "A", 2: "C", 3: "G", 4: "T", 5: " "}
-                            #ed_val = np.mean(np.array(convert_to_string(beam_results, out_lens, labels_val, lab_len_val, dict_classes)))
                             ed_val, num_char_ref = convert_to_string(beam_results, out_lens, labels_val, lab_len_val, dict_classes)
                             epoch_editd_val += ed_val
                             running_editd_val += ed_val
@@ -902,7 +840,6 @@ def basecalling(argv):
     elif opt == "RMSprop":
     	optimizer = optim.RMSprop(model12.parameters(), eps=float(eps), lr=lr, weight_decay=weight_decay)
 
-    #criterion = torch.nn.NLLLoss(ignore_index=5)#.to(device)
     criterion = torch.nn.CTCLoss(blank=0, reduction='sum')
 
     if decrease_lr:

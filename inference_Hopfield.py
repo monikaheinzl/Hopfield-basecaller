@@ -215,7 +215,6 @@ class Transformer(nn.Module):
         self.encoder = Encoder(hopfield_self_src, d_model, nhead, nhid, dff, nlayers, dropout, port)
         self.decoder = Decoder(hopfield_self_target, hopfield_self_src, d_model, nhead, nhid, dff, nlayers, dropout, port)
         self.fc = nn.Linear(hopfield_self_target.output_size, ntoken) # ntoken
-        #self.fc = nn.Linear(d_model, ntoken)
         self.port = port
     def _generate_square_subsequent_mask(self, sz):
         mask = torch.triu(torch.ones(sz, sz), 1)
@@ -277,8 +276,9 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
     if not os.path.exists(fname + '/{}'.format(out_name)):
         os.makedirs(fname + '/{}'.format(out_name))
 
-    if not os.path.exists(fname + '/{}_softmax'.format(out_name)):
-        os.makedirs(fname + '/{}_softmax'.format(out_name))
+   # if not os.path.exists(fname + '/{}_softmax'.format(out_name)):
+   #     os.makedirs(fname + '/{}_softmax'.format(out_name))
+    
     if not os.path.exists(fname + '/{}_windows'.format(out_name)):
         os.makedirs(fname + '/{}_windows'.format(out_name))
     read_i = 0
@@ -288,9 +288,7 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
 
         f2 = open(fname + '/{}/{}.fasta'.format(out_name, file.split(".fast5")[0]), "w")
         f2.write(">" + file.split(".fast5")[0] + "\n")
-
         f = open(fname + '/{}_windows/{}.fasta'.format(out_name, file.split(".fast5")[0]), "w")
-        
         
         test_set = [torch.from_numpy(test_set[0]).to(device), torch.from_numpy(test_set[1]).to(device), torch.from_numpy(test_set[2]).to(device), 
                     torch.from_numpy(test_set[3]).to(device), torch.from_numpy(test_set[4]).to(device), torch.from_numpy(test_set[5]).to(device)]
@@ -304,8 +302,6 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
         signal_len = test_set[3]
         label_len = test_set[4]
         read_index = test_set[5]
-
-        print(signal_len)
     
         #Get training data
         test_loader = get_train_loader(input_x, signal_len, 
@@ -329,17 +325,12 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
                 print("sample {}/{}".format(iteration_val+1, len(test_loader)))
                 print("read id = ", int(batch_read.item()))
                 print("read = ", read_i, " from ", len(os.listdir(test_ds)))
-                #print("signal")
                 print("=" * 30)
     
-                #if int(batch_read.item()) < 109:
-                #    continue
-
                 if seq_len_val.item() <= 0: # if window has length 0 --> skip
                     continue
     
                 batch_x_val = Variable(batch_x_val, requires_grad=False)#.long() # batch_size x out_size x seq_length 
-                #print("batch_x_val= ", batch_x_val.size())
                 ######## ENCODER ###########
                 ############################
                 if src_emb == "cnn":
@@ -405,7 +396,6 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
                     if beam.done():
                         break
     
-                
                 # BEAM SEARCH
                 ## retrieve n candidate sequences and their sequence plus score
                 num_candidates = 1 # only top beam
@@ -427,22 +417,16 @@ def inference(model, test_ds, dict_classes, mode="inference", beam_size=1, devic
                 old_read_id = int(batch_read.item())
                 counter_read += 1
     
-                #print(softmaxes_summed[0], len(softmaxes_summed[0]), softmaxes[0], len(softmaxes[0]), len(best_candidate), best_candidate)
                 dict_softmax[iteration_val] = (softmaxes_summed[0], softmaxes[0])
-                #sys.exit()
 
-                #if iteration_val > 2:
-                #    break
-        with open(fname + '/{}_softmax/{}.pickle'.format(out_name, file.split(".")[0]), 'wb') as handle:
-            pickle.dump(dict_softmax, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        #with open(fname + '/{}_softmax/{}.pickle'.format(out_name, file.split(".")[0]), 'wb') as handle:
+        #    pickle.dump(dict_softmax, handle, protocol=pickle.HIGHEST_PROTOCOL)
         
         read_i += 1
         f2.write("".join(read_window)+ "\n")
         f2.close()
         f.close()
-        #sys.exit()
     
-    #print("mean edit distance = ", np.nanmean(np.asarray(edit_d)))
     return (basecalled_sequences)
 
 def count_parameters(model):

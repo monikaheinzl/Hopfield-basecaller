@@ -120,13 +120,9 @@ def make_argparser():
                         help="Set forget gate bias in Encoder-LSTM")
     parser.add_argument('--forget_bias_decoder', type=str, default="0",
                         help="Set forget gate bias in Decoder-LSTM")
-    #parser.add_argument('--bi_lstm', action='store_true',
-     #                   help="Bidirectional LSTM in Encoder-LSTM")
     parser.add_argument("--bi_lstm", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=False)
 
     # teacher forcing
-    #parser.add_argument('--reduced_tf', action='store_true',
-    #                    help="Reduce teacher forcing rate when accuracy > 0.35 and TF ratio larger than 0.25")
     parser.add_argument("--reduced_tf", type=lambda x:bool(strtobool(x)), nargs='?', const=True, default=False)
 
     parser.add_argument('--tf_ratio', type=float, default=Range(0.0, 1.0),
@@ -240,7 +236,6 @@ class LSTMencoder(nn.Module):
         packed_seq = nn.utils.rnn.pack_padded_sequence(sorted_inputs, sorted_len.cpu().numpy(), batch_first=True)
         # Define the LSTM layer
         lstm_out, hidden = self.lstm(packed_seq) # [seq_len, batch, input_dim]
-        #print(hidden[0].size())
         # undo the packing operation
         unpacked, unpacked_len = nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         
@@ -385,18 +380,11 @@ class LSTMdecoder(nn.Module):
             
             if self.attention:  
                 # ATTENTION MECHANISM
-                #print("encoder_outputs", encoder_outputs[:, i, :].size(), "hidden[0][0]", hidden[0][0].size())
-                #print("torch.cat", torch.cat((encoder_outputs[:, i, :], hidden[0][0]), dim=1).size())
                 attn_weights = F.softmax(
                         self.attn(torch.cat((encoder_outputs[:, i, :], hidden[0][0]), dim=1)), dim=1) # encoder batch first: b,len,hidden, hidden: 2,b,hidden
-                #print("attn_weights", attn_weights.size(), encoder_outputs[:, i, :].size())
-                #print(attn_weights.type(torch.FloatTensor).unsqueeze(1).size(), encoder_outputs.type(torch.FloatTensor).size())
                 attn_applied = torch.bmm(attn_weights.type(torch.FloatTensor).unsqueeze(1).cuda(self.port), 
                     encoder_outputs[:, i, :].type(torch.FloatTensor).unsqueeze(1).cuda(self.port))
-                #print("attn_applied",attn_applied.size(), attn_applied.squeeze(1).size())
-                #print("input_decoder", input_decoder.size())
                 input_decoder = torch.cat((input_decoder, attn_applied.squeeze(1)), dim=1) # input_decoder: b,hidden; attn_applied: b, 1, hidden
-                #print("input_decoder", input_decoder.size())
             
             input = torch.unsqueeze(input_decoder.type(torch.FloatTensor), 1).cuda(self.port) # (batch, seq, feature), 
             lstm_in_unroll, hidden = self.lstm_unroll(input, hidden) # [batch size, seq, hidden dim]
@@ -406,7 +394,6 @@ class LSTMdecoder(nn.Module):
 
             #decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio
-            #teacher_force = random_value < teacher_forcing_ratio
             
             # put on position: seq, 0:true_batch_size, features
             # rest: seq, true_batch_size:max_seq_len, features filled with 0
@@ -470,8 +457,6 @@ class Seq2Seq(nn.Module):
         # sort labels so that they match with order in batch
         labels_sorted = labels[sorted_idx_target, :]#.gather(0, sorted_idx_lab.long())
         labels10_sorted = labels10[sorted_idx_target, :, :] # batch, out_size, seq_len
-        #print("sorted one hot encoding", labels10_sorted.size())
-        #print("max. target length= ", labels_sorted.size(1))
 
         ###########################################
         ##### Decoder #############################
@@ -514,8 +499,6 @@ def convert_to_string(pred, target, target_lengths):
             encoded_pred.append(vocab[int(p.item())])
         encoded_pred = ''.join(encoded_pred)
         encoded_target = ''.join([vocab[int(x.item())] for x in seq_target[0:length]])
-        #max_len = float(max([len(encoded_pred), len(encoded_target)]))
-        #editd.append(editdistance.eval(encoded_pred, encoded_target)/max_len)
         result = editdistance.eval(encoded_pred, encoded_target)
         editd += result
         num_chars += len(encoded_target)
@@ -533,7 +516,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
     print("teacher forcing ratio=", teacher_forcing_ratio)
     print("shuffle=", shuffle)
     
-    #print("training data set=", train_ds[0].size(), train_ds[1].size())
     if val_ds is not None:
         input_x_val = val_ds[0]
         input_y_val = val_ds[1]
@@ -615,7 +597,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
 
         epoch_loss = 0
         epoch_acc = 0
-        
         epoch_loss_val = 0
         epoch_acc_val = 0
         epoch_editd_val = 0
@@ -639,7 +620,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
             seq_len = data[2]
             lab_len = data[3]
             batch_y10 = data[4]
-            #batch_read = data[5]
                 
             #Wrap them in a Variable object
             inputs, labels, labels10 = Variable(batch_x, requires_grad=False), Variable(batch_y, requires_grad=False), Variable(batch_y10, requires_grad=False) # batch_size x out_size x seq_length 
@@ -695,7 +675,6 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                     
             #clipping_value = 1 #arbitrary number of your choosing
             if clipping_value != "None":
-                #print(clipping_value)
                 nn.utils.clip_grad_norm_(model.parameters(), int(clipping_value))
             
             # Update encoder and decoder
@@ -728,11 +707,9 @@ def trainNet(model, train_ds, optimizer, criterion, clipping_value=None, val_ds=
                         seq_len_val = data_val[2]
                         lab_len_val = data_val[3]
                         batch_y10_val = data_val[4]
-                        #batch_read_val = data_val[5]
 
                         inputs_val, labels_val, labels10_val = Variable(batch_x_val, requires_grad=False), Variable(batch_y_val, requires_grad=False), Variable(batch_y10_val, requires_grad=False) 
                         # batch_size x out_size x seq_length                     
-
                         
                         output_val, sorted_labels_val, sorted_labels_len_val = model(inputs_val, seq_len_val, 
                                                               0, labels_val, lab_len_val, 
@@ -1040,7 +1017,6 @@ def plot_heatmap(dict_weights,save_files_path, filename, split_LSTMbiases = Fals
         figure2.savefig(save_files_path + "/heatmap_{}_biases.pdf".format(filename))
         plt.clf()
 
-
 def bestPerformance2File(input, fname, editD=True):
     loss_train, loss_val, acc_train, acc_val, editd_train, editd_val = input[0], input[1], input[2], input[3], input[4], input[5]
     max_idx_train = max(acc_train, key=lambda k: acc_train[k])
@@ -1240,12 +1216,6 @@ def basecalling(argv):
         bestPerformance2File(out12[1], save_files_path + "best_performances_{}.txt".format(fname), editD=editD)
         plot_error_accuarcy_iterations_train(out12[0], pdf, editD=editD)
         plot_error_accuarcy_iterations_val(out12[0], pdf, editD=editD)
-        #plot_heatmap(out12[4][0], save_files_path, filename="weights", split_LSTMbiases=True)
-        #plot_heatmap(out12[4][1],save_files_path, filename="gradients", split_LSTMbiases=True)
-        #if cell_enc:
-        #    plot_activations(out12[2], pdf=pdf, title="- encoder - forget bias = {}".format(forget_bias))
-        #if cell_dec:
-        #    plot_activations(out12[3], pdf=pdf, title="- decoder - forget bias = {}".format(forget_bias))
         print("Training took: {:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
 if __name__ == '__main__':
     sys.exit(basecalling(sys.argv))

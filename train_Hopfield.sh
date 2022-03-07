@@ -109,7 +109,7 @@ model_file="/system/user/Documents/training_result_"$modelname"_checkpoint.pt"
 config_file="/system/user/Documents/training_result_"$modelname"/model.json"
 
 
-outfolder="final_model_CTC"
+outfolder="final_model"
 python Training_Hopfield.py -i $infile -o $outfolder -g $port -s $seed -b $batch_size -e $nepochs -v $make_val --max_window_size $max_window_size --max_target_size $max_target_size \
 												--input_bias_cnn $input_bias_cnn --channel_number $c1 $c2 $c3 --padding $p1 $p2 $p3 -l $cnn_layers --pooling_type $pooling --strides $s1 $s2 $s3 --kernel $k1 $k2 $k3 \
 												--dropout_cnn $dropout_cnn --dropout_input $dropout_input --drop_prob $drop_prob --src_emb $src_emb --batch_norm $batch_norm \
